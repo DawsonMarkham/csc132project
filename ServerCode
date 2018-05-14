@@ -1,0 +1,159 @@
+import RPi.GPIO as GPIO
+import sys
+import socket
+from time import sleep
+
+class Instructions(object):
+        def __init__(self, key, color, number, expect):
+                self.key = Key(key, expect)
+                self.color = color
+                self.number = int(number)
+                self.valid = self.key.checkKey()
+
+        @property
+        def key(self):
+                return self._key
+
+        @key.setter
+        def key(self, string):
+                self._key = string
+
+        @property
+        def color(self):
+                return self._color
+
+        @color.setter
+        def color(self, string):
+                self._color = string
+
+        @property
+        def number(self):
+                return self._number
+
+        @number.setter
+        def number(self, value):
+                if (value <= 0 or value > 3):
+                        self._number = 0
+                else:
+                        self._number = value
+
+        @property
+        def valid(self):
+                return self._valid
+
+        @valid.setter
+        def valid(self, boolean):
+                if (boolean == True):
+                    self._valid = boolean
+                else:
+                    self._valid = False
+
+        #functions
+        def chooseColor(self):
+                if (self.color == "blue"):
+                        GPIO = blue
+                        return "blue"
+                elif (self.color == "red"):
+                        GPIO = red
+                        return "red"
+                else:
+                        return "unkown"
+                
+        def findGPIO(self):
+                if (self.color == "blue"):
+                        return blue
+                elif (self.color == "red"):
+                        return red
+                
+        def solControl(self):
+                GPIO.output(self.findGPIO(), True)
+                sleep(0.5)
+                GPIO.output(self.findGPIO(), False)
+                sleep(0.5)
+
+class Key(object):
+        def __init__(self, key, index):
+            self.key = key
+            self.index = index
+
+        @property
+        def key(self):
+                return self._key
+
+        @key.setter
+        def key(self, string):
+                self._key = string
+
+        @property
+        def index(self):
+                return self._index
+
+        @index.setter
+        def key(self, value):
+                self._index = value
+
+        def checkKey(self):
+                if (self.key == KEYS[index]):
+                        return True
+                else:
+                        return False
+
+                
+########
+#Main                    
+########                   
+
+# server setup
+PORT = 3863
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("", PORT))
+s.listen(0)
+
+
+# GPIO setup
+GPIO.setmode(GPIO.BCM)
+blue  = 17
+red   = 18
+GPIO.setup(blue, GPIO.OUT)
+GPIO.setup(red, GPIO.OUT)
+
+# variables
+blueCounter = 0
+redCounter  = 0
+
+KEYS =["Hey", "this", "is", "a", "list", "of", "keywords"]
+
+
+try:
+        while (True):
+                c, addr = s.accept()
+                #c.settimeout(5.0)
+
+                data = c.recv(4096)
+                print data
+                print 1
+                while (len(data) != 0):
+                        print 2
+                        print data
+                        action = data.split(':')
+                        print action
+                        if (len(action)==3):
+                                inst = Instructions(action[0], action[1], action[2], index)
+                                if (inst.checkKey()):
+                                        if (inst.chooseColor() == "blue" or inst.chooseColor() == "red"):
+                                                for i in range(0, inst.number):
+                                                        inst.solControl()
+                                                if (inst.chooseColor() == "blue"):
+                                                        blueCounter += inst.number
+                                                elif (inst.chooseColor() == "red"):
+                                                        redCounter += inst.number
+
+                        sys.stdout.write(data)
+                        sys.stdout.flush()
+                        data = c.recv(4096)
+                        
+except:
+        GPIO.cleanup()
+        s.shutdown(socket.SHUT_RDWR)
+        s.close()
